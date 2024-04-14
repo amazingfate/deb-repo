@@ -5,7 +5,8 @@ import oras.provider
 import hashlib
 import os
 
-oci_repo = "ghcr.io/amazingfate/deb-repo:test"
+oci_repo = os.environ.get("OCI_REPO")
+oci_auth_name = os.environ.get("OCI_AUTH_NAME")
 
 def calculate_sha256(file_path):
     sha256_hash = hashlib.sha256()
@@ -55,7 +56,7 @@ def upload_blobs_manifest(blob_file_name, blob_file_digest, oci_repo):
     annotset = oras.oci.Annotations({})
     layer = oras.oci.NewLayer(blob, "application/octet-stream", is_dir=False)
     layer["annotations"] = {oras.defaults.annotation_title: blob_name}
-    reg.set_basic_auth("amazingfate", token)
+    reg.set_basic_auth(oci_auth_name, token)
     print("going to upload blob %s" % blob)
     print(reg.upload_blob(blob, container, layer))
 
@@ -95,7 +96,7 @@ def delete_blobs_manifest(blob_file_name, blob_file_digest, oci_repo):
                 new_layers.append(old_layer)
     manifest["layers"] = new_layers
     print("going to upload manifest")
-    reg.set_basic_auth("amazingfate", token)
+    reg.set_basic_auth(oci_auth_name, token)
     print(reg.upload_manifest(manifest, container))
 
 
