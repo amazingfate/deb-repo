@@ -74,6 +74,31 @@ def upload_blobs_manifest(blob_file_name, blob_file_digest, oci_repo):
     print("going to upload manifest")
     print(reg.upload_manifest(manifest, container))
 
+def delete_blobs_manifest(blob_file_name, blob_file_digest, oci_repo):
+    token = os.environ.get("GH_TK")
+    class MyProvider(oras.provider.Registry):
+        pass
+
+    reg = MyProvider()
+    container = reg.get_container(oci_repo)
+    manifest = reg.get_manifest(container)
+    new_layers = []
+    delete_layer = False
+    for old_layer in manifest["layers"]:
+        if blob_file_name == old_layer["annotations"][oras.defaults.annotation_title]:
+            delete_layer = True
+    for old_layer in manifest["layers"]:
+        if delete_layer:
+            if blob_file_name == old_layer["annotations"][oras.defaults.annotation_title]:
+                print("%s exist in remote, going to delete" % blob_file_name)
+            else:
+                new_layers.append(old_layer)
+    manifest["layers"] = new_layers
+    print("going to upload manifest")
+    reg.set_basic_auth("amazingfate", token)
+    print(reg.upload_manifest(manifest, container))
+
+
 # Get manifest from remote repo
 class MyProvider(oras.provider.Registry):
     pass
@@ -84,13 +109,15 @@ manifest = reg.get_manifest(container)
 
 # Get remote package file name and digest info from manifest
 remote_file_sha256_infos =  []
+remote_extra_file_sha256_infos =  []
 for oci_layer in manifest["layers"]:
-    if oci_layer["annotations"]["org.opencontainers.image.title"] == "Packages" or oci_layer["annotations"]["org.opencontainers.image.title"] == "Sources":
-        continue
     remote_file_sha256_info = {}
     remote_file_sha256_info["Filename"] = oci_layer["annotations"]["org.opencontainers.image.title"]
     remote_file_sha256_info["SHA256"] = oci_layer["digest"].split(":")[1]
-    remote_file_sha256_infos.append(remote_file_sha256_info)
+    if oci_layer["annotations"]["org.opencontainers.image.title"] == "Packages" or oci_layer["annotations"]["org.opencontainers.image.title"] == "Sources":
+        remote_extra_file_sha256_infos.append(remote_file_sha256_info)
+    else:
+        remote_file_sha256_infos.append(remote_file_sha256_info)
 
 # Read info of packages to upload from local Packages and Sources
 pkg_file = debian_support.PackageFile("Packages")
@@ -112,13 +139,35 @@ for package_info in all_package_list:
     if not (remote_exist and hash_match):
         new_package_list.append(package_info)
 
+# Find deleted packages
+package_list_to_delete = []
+for remote_file_package_info in remote_file_sha256_infos:
+    local_exist = False
+    for local_package_info in all_package_list:
+        if remote_file_package_info["Filename"] == local_package_info["Filename"]:
+            local_exist = True
+    if not local_exist:
+        package_list_to_delete.append(remote_file_package_info)
+
 # Always upload Packages and Sources file
 for extra_file in ["Packages", "Sources"]:
     extra_file_info = {}
     extra_file_info["Filename"] = extra_file
     extra_file_info["SHA256"] = calculate_sha256(os.path.join(os.getcwd(), extra_file))
-    new_package_list.append(extra_file_info)
+    extra_remote_exist = False
+    extra_hash_match = False
+    for extra_file_remote_info in remote_extra_file_sha256_infos:
+        if extra_file_info["Filename"] == extra_file_remote_info["Filename"]:
+            extra_remote_exist = True
+            if extra_file_info["SHA256"] == extra_file_remote_info["SHA256"]:
+                extra_hash_match = True
+    if not (extra_remote_exist and extra_hash_match):
+        new_package_list.append(extra_file_info)
 
 # Upload packages one by one
 for upload_file_info in new_package_list:
     upload_blobs_manifest(upload_file_info["Filename"], upload_file_info["SHA256"], oci_repo)
+
+# Delete useless packages
+for delete_package_info in package_list_to_delete:
+    delete_blobs_manifest(delete_package_info["Filename"], delete_package_info["SHA256"], oci_repo)
