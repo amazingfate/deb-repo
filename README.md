@@ -1,5 +1,10 @@
 # Scripts to manage deb repo based on GHCR
 
+##  Features
+- [x] Only upload files not exist in remote repo
+- [x] Delete unused files in remote repo
+- [ ] Signature of repo
+
 ## Create a repo:
 https://github.com/AkihiroSuda/apt-transport-oci/blob/master/examples/README.md
 
