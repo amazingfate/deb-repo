@@ -8,6 +8,7 @@ There are 3 necessary env:
  - `OCI_REPO` for oci repo, for example `ghcr.io/amazingfate/deb-repo:test`
  - `OCI_AUTH_NAME` for your oci repo auth username
  - `GH_TK` for oci repo auth token
+
 Make sure to export them before uploading.
 
 ## Upload packages to an existing repo:
