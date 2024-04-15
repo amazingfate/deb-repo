@@ -8,12 +8,13 @@ There are 3 necessary env:
  - `OCI_REPO` for oci repo, for example `ghcr.io/amazingfate/deb-repo:test`
  - `OCI_AUTH_NAME` for your oci repo auth username
  - `GH_TK` for oci repo auth token
+Make sure to export them before uploading.
 
 ## Upload packages to an existing repo:
-1, use oras to pull the full repo
+1, use oras to pull the full repo for example: `oras pull ghcr.io/amazingfate/deb-repo:test`
 
-2, Add package files to the local repo dir
+2, Add/delete/update package files to the local repo dir
 
-3, dpkg-scanpackage/dpkg-scansources to generate Packages/Sources
+3, Use command `dpkg-scanpackage`/`dpkg-scansources` to generate `Packages`/`Sources`
 
-4, run upload_package.py in the local repo dir, it's hard-coded to my repo `ghcr.io/amazingfate/deb-repo:test` at the moment
+4, run `upload_package.py` in the local repo dir
