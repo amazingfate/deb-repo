@@ -24,3 +24,6 @@ Make sure to export them before uploading.
 3, Use command `dpkg-scanpackage`/`dpkg-scansources` to generate `Packages`/`Sources`
 
 4, run `upload_package.py` in the local repo dir
+
+## OCI plugin of apt is packaged at OBS, install step:
+https://software.opensuse.org//download.html?project=home%3Aamazingfate%3Aapt-transport-oci&package=apt-transport-oci
